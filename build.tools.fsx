@@ -2,13 +2,15 @@
 
 namespace System
 
-// open System
-// open System.IO
-// open System.Diagnostics
-open Fake.Core
-open Fake.IO
+open System
 open System.IO
 open System.Text.RegularExpressions
+open System.Diagnostics
+
+open Fake.Core
+open Fake.IO
+open Fake.IO.Globbing.Operators
+open Fake.IO.FileSystemOperators
 
 [<AutoOpen>]
 module Fx =
@@ -46,6 +48,10 @@ module File =
         then FileInfo(filename).LastWriteTimeUtc <- DateTime.UtcNow
         else saveText filename ""
 
+module Path =
+    let getFileName path = Path.GetFileName(path)
+    let getFileNameWithoutExt path = Path.GetFileNameWithoutExtension(path)
+
 module Regex =
     let create ignoreCase pattern =
         let ignoreCase = if ignoreCase then RegexOptions.IgnoreCase else RegexOptions.None
@@ -61,7 +67,7 @@ module Shell =
     let mono = "Mono.Runtime" |> Type.GetType |> isNull |> not
     let runAt directory executable arguments =
         let command = sprintf "%s %s" (String.quote executable) arguments |> tap (Trace.logfn "> %s")
-        let comspec, comspecArgs = if mono then "bash", "-c" else environVarOrFail "COMSPEC", "/c"
+        let comspec, comspecArgs = if mono then "bash", "-c" else Environment.environVarOrFail "COMSPEC", "/c"
         let info = ProcessStartInfo(comspec, (comspecArgs, command) ||> sprintf "%s \"%s\"", UseShellExecute = false, WorkingDirectory = directory)
         let proc = Process.Start(info)
         proc.WaitForExit()
@@ -90,10 +96,10 @@ module Config =
                     let section = m.Groups.["name"].Value
                     parse lines section result
                 | _ ->
-                    printfn "Line '%s' does not match config pattern as has been ignored" line
+                    Trace.traceErrorfn "Line '%s' does not match config pattern as has been ignored" line
                     parse lines section result
-        parse (lines |> List.ofSeq) "" [] |> List.rev |> validate
-    let tryLoadFile fileName = if File.Exists(fileName) then fileName |> ReadFile |> load else []
+        parse (List.ofSeq lines) "" [] |> List.rev |> validate
+    let tryLoadFile fileName = if File.Exists(fileName) then fileName |> File.read |> load else []
     let items section (config: Item seq) = config |> Seq.filter (fun i -> i.Section = section)
     let keys section (config: Item seq) = config |> items section |> Seq.map (fun i -> i.Key)
     let value section key (config: Item seq) =
@@ -106,7 +112,7 @@ module Config =
 
 module Proj =
     let outputFolder = ".output"
-    let releaseNotes = "./CHANGES.md" |> ReleaseNotesHelper.LoadReleaseNotes
+    let releaseNotes = "./CHANGES.md" |> ReleaseNotes.load
     let timestamp =
         let baseline = DateTime.Parse("2000-01-01T00:00:00") // ~y2k
         DateTime.Now.Subtract(baseline).TotalSeconds |> int |> sprintf "%8x"
@@ -115,15 +121,15 @@ module Proj =
     let settings = [ "settings.config"; ".secrets.config" ] |> Seq.map Config.tryLoadFile |> Config.merge
     let listProj () =
         let isValidProject projectPath =
-            let projectFolder = projectPath |> directory |> filename
-            let projectName = projectPath |> fileNameWithoutExt
+            let projectFolder = projectPath |> Path.getDirectory |> Path.getFileName
+            let projectName = projectPath |> Path.getFileNameWithoutExt
             String.same projectFolder projectName
         !! "src/*/*.*proj" |> Seq.filter isValidProject
     let isTemplateProj projectFile =
-        let templateJson = (projectFile |> directory) @@ ".template.config/template.json"
+        let templateJson = (projectFile |> Path.getDirectory) @@ ".template.config/template.json"
         File.Exists(templateJson)
-    let isTestProj projectFile = projectFile |> directory |> Regex.matches "Test$"
-    let isDemoProj projectFile = projectFile |> directory |> Regex.matches "Demo$"
+    let isTestProj projectFile = projectFile |> Path.getDirectory |> Regex.matches "Test$"
+    let isDemoProj projectFile = projectFile |> Path.getDirectory |> Regex.matches "Demo$"
     let isNugetProj projectFile = not (isTemplateProj projectFile || isTestProj projectFile || isDemoProj projectFile)
 
     let restore project = DotNetCli.Restore (fun p -> { p with Project = project })

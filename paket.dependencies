@@ -9,13 +9,14 @@ nuget xunit.runner.visualstudio
 clitool dotnet-xunit
 
 group Fake
-	storage packages
+	storage none
 	framework netstandard20
 	source https://www.nuget.org/api/v2
 
 	generate_load_scripts true
 
 	nuget Fake.Core.Target
+	nuget Fake.Core.ReleaseNotes
 	nuget Fake.IO.FileSystem
 	nuget Fake.DotNet.MSBuild
 	nuget Fake.DotNet.Testing.NUnit
