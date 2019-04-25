@@ -4,6 +4,7 @@ namespace System
 
 open System
 open System.IO
+open System.Net
 open System.Text.RegularExpressions
 open System.Diagnostics
 
@@ -11,6 +12,8 @@ open Fake.Core
 open Fake.IO
 open Fake.IO.Globbing.Operators
 open Fake.IO.FileSystemOperators
+open Fake.DotNet
+open Fake.DotNet
 
 [<AutoOpen>]
 module Fx =
@@ -30,6 +33,12 @@ module Option =
     let inline fromRef o = match o with | null -> None | _ -> Some o
 
 module File =
+    ServicePointManager.SecurityProtocol <-
+        ServicePointManager.SecurityProtocol
+        ||| SecurityProtocolType.Tls
+        ||| SecurityProtocolType.Tls11
+        ||| SecurityProtocolType.Tls12
+
     let update modifier inputFile =
         let outputFile = Path.GetTempFileName()
         Shell.cp inputFile outputFile
@@ -47,6 +56,12 @@ module File =
         if File.Exists(filename)
         then FileInfo(filename).LastWriteTimeUtc <- DateTime.UtcNow
         else saveText filename ""
+
+    let download filename (url: string) =
+        if not (exists filename) then
+            Trace.logfn "> download %s" url
+            use wc = new WebClient()
+            wc.DownloadFile(url, filename)
 
 module Path =
     let getFileName path = Path.GetFileName(path)
@@ -78,7 +93,7 @@ module Shell =
 module Config =
     type Item = { Section: string; Key: string; Value: string }
     let private sectionRx = """^\s*\[\s*(?<name>.*?)\s*\]\s*$""" |> Regex.create true
-    let private valueRx = """^\s*(?<key>.*?)\s*=\s*(?<value>.*?)\s*$""" |> Regex.create true
+    let private valueRx = """^\s*(?<key>.*?)\s*(=\s*(?<value>.*?)\s*)?$""" |> Regex.create true
     let private emptyRx = """^\s*(;.*)?$""" |> Regex.create true
     let validate (items: Item seq) = items |> Seq.distinctBy (fun i -> i.Section, i.Key) |> List.ofSeq
     let merge configs = configs |> Seq.collect id |> validate
@@ -89,16 +104,19 @@ module Config =
             | line :: lines ->
                 match line with
                 | Regex.Match emptyRx _ -> parse lines section result
-                | Regex.Match valueRx m ->
-                    let item = { Section = section; Key = m.Groups.["key"].Value; Value = m.Groups.["value"].Value }
-                    parse lines section (item :: result)
                 | Regex.Match sectionRx m ->
                     let section = m.Groups.["name"].Value
                     parse lines section result
+                | Regex.Match valueRx m ->
+                    let key = m.Groups.["key"].Value
+                    let value = match m.Groups.["value"] with | m when m.Success -> m.Value | _ -> ""
+                    let item = { Section = section; Key = key; Value = value }
+                    parse lines section (item :: result)
                 | _ ->
                     Trace.traceErrorfn "Line '%s' does not match config pattern as has been ignored" line
                     parse lines section result
-        parse (List.ofSeq lines) "" [] |> List.rev |> validate
+        parse (lines |> List.ofSeq) "" [] |> List.rev |> validate
+
     let tryLoadFile fileName = if File.Exists(fileName) then fileName |> File.read |> load else []
     let items section (config: Item seq) = config |> Seq.filter (fun i -> i.Section = section)
     let keys section (config: Item seq) = config |> items section |> Seq.map (fun i -> i.Key)
@@ -118,51 +136,69 @@ module Proj =
         DateTime.Now.Subtract(baseline).TotalSeconds |> int |> sprintf "%8x"
     let productVersion = releaseNotes.NugetVersion |> Regex.replace "-wip$" (timestamp |> sprintf "-wip%s")
     let assemblyVersion = releaseNotes.AssemblyVersion
-    let settings = [ "settings.config"; ".secrets.config" ] |> Seq.map Config.tryLoadFile |> Config.merge
+    let settings = 
+        ["."]
+        |> Seq.collect (fun dn -> ["settings"; ".secrets"] |> Seq.map (fun fn -> dn @@ fn))
+        |> Seq.collect (fun fn -> [".ini"; ".cfg"] |> Seq.map (fun ext -> sprintf "%s%s" fn ext))
+        |> Seq.map Config.tryLoadFile 
+        |> Config.merge
     let listProj () =
         let isValidProject projectPath =
             let projectFolder = projectPath |> Path.getDirectory |> Path.getFileName
             let projectName = projectPath |> Path.getFileNameWithoutExt
             String.same projectFolder projectName
-        !! "src/*/*.*proj" |> Seq.filter isValidProject
-    let isTemplateProj projectFile =
-        let templateJson = (projectFile |> Path.getDirectory) @@ ".template.config/template.json"
-        File.Exists(templateJson)
-    let isTestProj projectFile = projectFile |> Path.getDirectory |> Regex.matches "Test$"
-    let isDemoProj projectFile = projectFile |> Path.getDirectory |> Regex.matches "Demo$"
-    let isNugetProj projectFile = not (isTemplateProj projectFile || isTestProj projectFile || isDemoProj projectFile)
+        !! "src/*/*.??proj" |> Seq.filter isValidProject
 
-    let restore project = DotNetCli.Restore (fun p -> { p with Project = project })
-    let build project = DotNetCli.Build (fun p -> { p with Configuration = "Release"; Project = project })
-    let test project = DotNetCli.Test (fun p ->
-        { p with
-            Configuration = "Release"
-            Project = project
-            AdditionalArgs = ["--no-build"; "--no-restore"]
-        })
-    let testAll () = listProj () |> Seq.filter isTestProj |> Seq.iter test
+    let findSln name = !! (sprintf "src/%s.sln" name)
+    let findProj name = !! (sprintf "src/%s/%s.??proj" name name)
+
+    let isTestProj projectFile = projectFile |> Path.getDirectory |> Regex.matches "Test$"
+
+    let restore solution =
+        solution |> findSln |> Seq.iter (DotNet.restore id)
+    let build solution =
+        solution |> findSln |> Seq.iter (DotNet.build (fun p -> { p with Configuration = DotNet.Release }))
+    let test project = 
+        project |> DotNet.test (fun p -> { p with NoBuild = true; NoRestore = true; Configuration = DotNet.Release })
+    let testAll () = 
+        listProj () |> Seq.filter isTestProj |> Seq.iter test
+
+    let xtest project =
+        Shell.runAt project "dotnet" "xunit -verbose -configuration Release -nobuild"
+    let xtestAll () =
+        listProj () |> Seq.filter isTestProj |> Seq.iter (Path.getDirectory >> xtest)
+        
+    let snkGen snk =
+        let sn = !! "C:/Program Files (x86)/Microsoft SDKs/Windows/**/bin/**/sn.exe" |> Seq.tryHead
+        match File.exists snk, sn with 
+        | true, _ -> () 
+        | _, Some sn -> snk |> String.quote |> sprintf "-k %s" |> Shell.run sn
+        | _ -> failwith "SN.exe could not be found"
+
     let pack version project =
-        DotNetCli.Pack (fun p ->
+        project |> DotNet.pack (fun p ->
             { p with
-                Project = project
-                Configuration = "Release"
-                OutputPath = outputFolder |> FullName
-                AdditionalArgs = ["--no-build"; "--no-restore"] // "--include-symbols"
+                NoBuild = true
+                NoRestore = true
+                Configuration = DotNet.Release
+                OutputPath = outputFolder |> Path.getFullName |> Some
             })
-        let versionFile = outputFolder @@ (project |> filename) |> sprintf "%s.nupkg.latest"
-        [ version ] |> WriteFile versionFile
+        let versionFile = outputFolder @@ (project |> Path.getFileName) |> sprintf "%s.nupkg.latest"
+        version |> File.saveText versionFile
     let publish targetFolder project =
-        DotNetCli.Publish (fun p ->
+        project |> DotNet.publish (fun p ->
             { p with
-                Project = project
-                Configuration = "Release"
-                Output = targetFolder |> FullName
-                AdditionalArgs = ["--no-restore"; "/p:BuildProjectReferences=false"] // "--no-build"
+                NoBuild = true
+                NoRestore = true
+                Configuration = DotNet.Release
+                OutputPath = targetFolder |> Path.getFullName |> Some
+                Common = { p.Common with CustomParams = Some "/p:BuildProjectReferences=false" }
             })
     let publishNugetOrg accessKey project =
-        let version = outputFolder @@ project + ".nupkg.latest" |> ReadFile |> Seq.head
+        let version = outputFolder @@ project + ".nupkg.latest" |> File.read |> Seq.head
         let nupkg = project + "." + version + ".nupkg"
-        Shell.runAt outputFolder "dotnet" (sprintf "nuget push -s https://www.nuget.org/api/v2/package %s -k %s" nupkg accessKey)
+        let args = sprintf "nuget push -s https://www.nuget.org/api/v2/package %s -k %s" nupkg accessKey
+        Shell.runAt outputFolder "dotnet" args
 
     let updateVersion nugetVersion fileVersion projectFile =
         projectFile |> File.update (forgive (fun fn ->
@@ -190,17 +226,10 @@ module Proj =
                 !! (projectPath @@ "obj" @@ "*.nuspec") -- nuspecFile |> DeleteFiles
             )
         )
-    let releaseNupkg () =
+    let packMany projects =
         updateVersion productVersion assemblyVersion "Common.targets"
-        let projects =
-            listProj ()
-            |> Seq.filter isNugetProj
-            |> Seq.toArray
-        let folders =
-            projects
-            |> Seq.map directory
-            |> Seq.distinct
-            |> Seq.toArray
+        let projectFiles = projects |> Seq.map (fun p -> sprintf "src/%s/%s.*proj" p p) |> Seq.collect (!!) |> Seq.toArray
+        let folders = projectFiles |> Seq.map directory |> Seq.distinct |> Seq.toArray
         folders |> Seq.iter (fun folder ->
             folders |> Seq.iter fixPackReferences
             pack productVersion folder

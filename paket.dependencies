@@ -19,4 +19,5 @@ group Fake
 	nuget Fake.Core.ReleaseNotes
 	nuget Fake.IO.FileSystem
 	nuget Fake.DotNet.MSBuild
-	nuget Fake.DotNet.Testing.NUnit
+	nuget Fake.DotNet.Cli
+	nuget Fake.DotNet.Testing.XUnit2
