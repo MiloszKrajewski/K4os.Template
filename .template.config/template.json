@@ -1,0 +1,26 @@
+{
+	"author": "Milosz Krajewski",
+	"name": "K4os Template",
+	"shortName": "K4os",
+	"identity": "K4os.Template",
+	"sourceName": "K4os.Template",
+	"tags": {
+		"language": "C#"
+	},
+	"classifications": [
+		"K4os"
+	],
+	"sources": [
+		{
+			"source": "./", 
+			"target": "./",
+			"include": ["**/*"],
+			"exclude": [".*/**", "packages/**", "paket-files/**", "**/[Bb]in/**", "**/[Oo]bj/**", "paket.lock"]
+		}
+	],
+	"guids": [
+		"9CC4C587-A811-4A30-9C80-6E1049B94E2F",
+        "956BAD8B-61D4-4DAF-A8FE-9E08AB7E2603",
+        "87682762-D1C0-4471-AC90-E64F5AC58037"
+	]
+}
