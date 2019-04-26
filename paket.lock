@@ -2,8 +2,6 @@ STORAGE: NONE
 RESTRICTION: || (== net46) (== netcoreapp2.0) (== netstandard1.6) (== netstandard2.0)
 NUGET
   remote: https://www.nuget.org/api/v2
-    dotnet-xunit (2.3.1) - clitool: true
-      Microsoft.NETCore.App (>= 1.0) - restriction: || (&& (== net46) (>= netcoreapp1.0)) (== netcoreapp2.0) (&& (== netstandard1.6) (>= netcoreapp1.0)) (&& (== netstandard2.0) (>= netcoreapp1.0))
     Microsoft.CodeCoverage (16.0.1) - restriction: || (== net46) (== netcoreapp2.0) (&& (== netstandard1.6) (>= net45)) (&& (== netstandard1.6) (>= netcoreapp1.0)) (&& (== netstandard2.0) (>= net45)) (&& (== netstandard2.0) (>= netcoreapp1.0))
     Microsoft.DotNet.PlatformAbstractions (2.1) - restriction: || (&& (== net46) (>= netcoreapp1.0)) (== netcoreapp2.0) (&& (== netstandard1.6) (>= netcoreapp1.0)) (&& (== netstandard2.0) (>= netcoreapp1.0))
       System.AppContext (>= 4.1) - restriction: || (&& (== net46) (< net45)) (== netcoreapp2.0) (== netstandard1.6) (== netstandard2.0)
@@ -23,7 +21,6 @@ NUGET
     Microsoft.NET.Test.Sdk (16.0.1)
       Microsoft.CodeCoverage (>= 16.0.1) - restriction: || (== net46) (== netcoreapp2.0) (&& (== netstandard1.6) (>= net45)) (&& (== netstandard1.6) (>= netcoreapp1.0)) (&& (== netstandard2.0) (>= net45)) (&& (== netstandard2.0) (>= netcoreapp1.0))
       Microsoft.TestPlatform.TestHost (>= 16.0.1) - restriction: || (&& (== net46) (>= netcoreapp1.0)) (== netcoreapp2.0) (&& (== netstandard1.6) (>= netcoreapp1.0)) (&& (== netstandard2.0) (>= netcoreapp1.0))
-    Microsoft.NETCore.App (2.2.4) - restriction: || (&& (== net46) (>= netcoreapp1.0)) (== netcoreapp2.0) (&& (== netstandard1.6) (>= netcoreapp1.0)) (&& (== netstandard2.0) (>= netcoreapp1.0))
     Microsoft.NETCore.Platforms (2.2) - restriction: || (&& (== net46) (< net45)) (&& (== net46) (< net452)) (&& (== net46) (>= netcoreapp2.0)) (&& (== net46) (< netstandard1.0)) (&& (== net46) (< netstandard1.3) (>= wpa81)) (&& (== net46) (< portable-net45+win8+wpa81)) (&& (== net46) (>= uap10.0)) (&& (== net46) (>= uap10.1)) (&& (== net46) (>= wp8)) (== netcoreapp2.0) (== netstandard1.6) (== netstandard2.0)
     Microsoft.NETCore.Targets (2.1) - restriction: || (&& (== net46) (== netstandard2.0)) (&& (== net46) (< net45)) (&& (== net46) (>= netcoreapp1.0)) (&& (== net46) (< portable-net45+win8+wp8+wpa81)) (&& (== net46) (< portable-net45+win8+wpa81)) (&& (== net46) (>= uap10.0)) (== netcoreapp2.0) (== netstandard1.6) (&& (== netstandard2.0) (>= netcoreapp1.0)) (&& (== netstandard2.0) (< netstandard1.2)) (&& (== netstandard2.0) (< netstandard1.3)) (&& (== netstandard2.0) (< netstandard1.4)) (&& (== netstandard2.0) (< netstandard1.5)) (&& (== netstandard2.0) (< netstandard1.6)) (&& (== netstandard2.0) (< portable-net45+win8+wp8+wpa81)) (&& (== netstandard2.0) (< portable-net45+win8+wpa81))
     Microsoft.TestPlatform.ObjectModel (16.0.1) - restriction: || (&& (== net46) (>= netcoreapp1.0)) (== netcoreapp2.0) (&& (== netstandard1.6) (>= netcoreapp1.0)) (&& (== netstandard2.0) (>= netcoreapp1.0))

@@ -79,9 +79,8 @@ module File =
 
     let download filename (url: string) =
         if not (exists filename) then
-            Trace.logfn "> download %s" url
-            use wc = new WebClient()
-            wc.DownloadFile(url, filename)
+            Log.info "> download %s" url
+            use wc = new WebClient() in wc.DownloadFile(url, filename)
 
 module Regex =
     let create ignoreCase pattern =
@@ -99,7 +98,8 @@ module Shell =
     let delete filename = File.delete filename
     let deleteAll filenames = File.deleteAll filenames
     let runAt directory executable arguments =
-        let command = sprintf "%s %s" (String.quote executable) arguments |> tap (Trace.logfn "> %s")
+        let command = sprintf "%s %s" (String.quote executable) arguments
+        Log.info "> %s @ %s" command (Path.toRelativeFromCurrent directory)
         let comspec, comspecArgs = if mono then "bash", "-c" else Environment.environVarOrFail "COMSPEC", "/c"
         let info = ProcessStartInfo(comspec, (comspecArgs, command) ||> sprintf "%s \"%s\"", UseShellExecute = false, WorkingDirectory = directory)
         let proc = Process.Start(info)
@@ -204,13 +204,6 @@ module Proj =
         projects |> Seq.iter test
     let testAll () =
         listProj () |> Seq.filter isTestProj |> testMany
-
-    let xtest project =
-        Shell.runAt project "dotnet" "xunit -verbose -configuration Release -nobuild"
-    let xtestMany projects =
-        projects |> Seq.iter xtest
-    let xtestAll () =
-        listProj () |> Seq.filter isTestProj |> Seq.iter (Path.dirnameOf >> xtest)
 
     let snkGen snk =
         let sn = !! "C:/Program Files (x86)/Microsoft SDKs/Windows/**/bin/**/sn.exe" |> Seq.tryHead
