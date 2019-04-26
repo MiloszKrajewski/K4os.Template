@@ -1,4 +1,7 @@
-#load "./.paket/load/netstandard2.0/Fake/fake.group.fsx"
+module BuildImportsModule
+
+#load "./.fake/build.fsx/intellisense.fsx"
+
 #if !FAKE
 #r "Facades/netstandard"
 #r "netstandard"

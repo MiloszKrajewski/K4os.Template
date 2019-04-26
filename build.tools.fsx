@@ -1,6 +1,8 @@
 #load "build.imports.fsx"
 
-namespace System
+#nowarn "52"
+
+namespace Tools
 
 open System
 open System.IO
@@ -12,7 +14,6 @@ open Fake.Core
 open Fake.IO
 open Fake.IO.Globbing.Operators
 open Fake.IO.FileSystemOperators
-open Fake.DotNet
 open Fake.DotNet
 
 [<AutoOpen>]
@@ -45,12 +46,19 @@ module File =
         modifier outputFile
         if Shell.compareFiles true inputFile outputFile |> not then
             Trace.logfn "File %s has been modified. Overwriting." inputFile
+            Trace.traceImportantfn "%s -> %s" outputFile inputFile
+            Trace.traceErrorfn "out: %A, in: %A" (File.exists outputFile) (File.exists inputFile)
+            Trace.tracefn "Trace%s?" "fn"
             Shell.rm inputFile
             Shell.mv outputFile inputFile
 
     let exists filename = File.Exists(filename)
     let loadText filename = File.ReadAllText(filename)
     let saveText filename text = File.WriteAllText(filename, text)
+    let loadLines filename = File.ReadAllLines(filename)
+    let saveLines filename lines = File.WriteAllLines(filename, lines)
+    let appendText filename text = File.AppendAllText(filename, text)
+    let appendLines filename lines = File.AppendAllLines(filename, lines)
 
     let touch filename =
         if File.Exists(filename)
@@ -64,8 +72,9 @@ module File =
             wc.DownloadFile(url, filename)
 
 module Path =
-    let getFileName path = Path.GetFileName(path)
-    let getFileNameWithoutExt path = Path.GetFileNameWithoutExtension(path)
+    let filenameOf path = Path.GetFileName(path)
+    let dirnameOf path = Path.GetDirectoryName(path)
+    let corenameOf path = Path.GetFileNameWithoutExtension(path)
 
 module Regex =
     let create ignoreCase pattern =
@@ -136,42 +145,69 @@ module Proj =
         DateTime.Now.Subtract(baseline).TotalSeconds |> int |> sprintf "%8x"
     let productVersion = releaseNotes.NugetVersion |> Regex.replace "-wip$" (timestamp |> sprintf "-wip%s")
     let assemblyVersion = releaseNotes.AssemblyVersion
-    let settings = 
+    let settings =
         ["."]
         |> Seq.collect (fun dn -> ["settings"; ".secrets"] |> Seq.map (fun fn -> dn @@ fn))
         |> Seq.collect (fun fn -> [".ini"; ".cfg"] |> Seq.map (fun ext -> sprintf "%s%s" fn ext))
-        |> Seq.map Config.tryLoadFile 
+        |> Seq.map Config.tryLoadFile
         |> Config.merge
     let listProj () =
         let isValidProject projectPath =
-            let projectFolder = projectPath |> Path.getDirectory |> Path.getFileName
-            let projectName = projectPath |> Path.getFileNameWithoutExt
+            let projectFolder = projectPath |> Path.dirnameOf |> Path.filenameOf
+            let projectName = projectPath |> Path.corenameOf
             String.same projectFolder projectName
         !! "src/*/*.??proj" |> Seq.filter isValidProject
 
     let findSln name = !! (sprintf "src/%s.sln" name)
     let findProj name = !! (sprintf "src/%s/%s.??proj" name name)
 
-    let isTestProj projectFile = projectFile |> Path.getDirectory |> Regex.matches "Test$"
+    let isTestProj projectFile = projectFile |> Path.dirnameOf |> Regex.matches "Test$"
+
+    let updateVersion nugetVersion fileVersion projectFile =
+        projectFile |> File.update (fun fn ->
+            Xml.pokeInnerText fn "/Project/PropertyGroup/Version" nugetVersion
+            Xml.pokeInnerText fn "/Project/PropertyGroup/AssemblyVersion" fileVersion
+            Xml.pokeInnerText fn "/Project/PropertyGroup/FileVersion" fileVersion
+        )
 
     let restore solution =
+        updateVersion productVersion assemblyVersion "Common.targets"
         solution |> findSln |> Seq.iter (DotNet.restore id)
+    let restoreMany solutions =
+        solutions |> Seq.iter restore
+
     let build solution =
-        solution |> findSln |> Seq.iter (DotNet.build (fun p -> { p with Configuration = DotNet.Release }))
-    let test project = 
-        project |> DotNet.test (fun p -> { p with NoBuild = true; NoRestore = true; Configuration = DotNet.Release })
-    let testAll () = 
-        listProj () |> Seq.filter isTestProj |> Seq.iter test
+        solution |> findSln |> Seq.iter (DotNet.build (fun p ->
+            { p with
+                NoRestore = true
+                Configuration = DotNet.Release
+            }))
+    let buildMany solutions =
+        solutions |> Seq.iter build
+
+    let test project =
+        project |> DotNet.test (fun p ->
+            { p with
+                NoBuild = true
+                NoRestore = true
+                Configuration = DotNet.Release
+            })
+    let testMany projects =
+        projects |> Seq.iter test
+    let testAll () =
+        listProj () |> Seq.filter isTestProj |> testMany
 
     let xtest project =
         Shell.runAt project "dotnet" "xunit -verbose -configuration Release -nobuild"
+    let xtestMany projects =
+        projects |> Seq.iter xtest
     let xtestAll () =
-        listProj () |> Seq.filter isTestProj |> Seq.iter (Path.getDirectory >> xtest)
-        
+        listProj () |> Seq.filter isTestProj |> Seq.iter (Path.dirnameOf >> xtest)
+
     let snkGen snk =
         let sn = !! "C:/Program Files (x86)/Microsoft SDKs/Windows/**/bin/**/sn.exe" |> Seq.tryHead
-        match File.exists snk, sn with 
-        | true, _ -> () 
+        match File.exists snk, sn with
+        | true, _ -> ()
         | _, Some sn -> snk |> String.quote |> sprintf "-k %s" |> Shell.run sn
         | _ -> failwith "SN.exe could not be found"
 
@@ -183,7 +219,7 @@ module Proj =
                 Configuration = DotNet.Release
                 OutputPath = outputFolder |> Path.getFullName |> Some
             })
-        let versionFile = outputFolder @@ (project |> Path.getFileName) |> sprintf "%s.nupkg.latest"
+        let versionFile = outputFolder @@ (Path.filenameOf project) |> sprintf "%s.nupkg.latest"
         version |> File.saveText versionFile
     let publish targetFolder project =
         project |> DotNet.publish (fun p ->
@@ -200,36 +236,29 @@ module Proj =
         let args = sprintf "nuget push -s https://www.nuget.org/api/v2/package %s -k %s" nupkg accessKey
         Shell.runAt outputFolder "dotnet" args
 
-    let updateVersion nugetVersion fileVersion projectFile =
-        projectFile |> File.update (forgive (fun fn ->
-            XmlPokeInnerText fn "/Project/PropertyGroup/Version" nugetVersion
-            XmlPokeInnerText fn "/Project/PropertyGroup/AssemblyVersion" fileVersion
-            XmlPokeInnerText fn "/Project/PropertyGroup/FileVersion" fileVersion
-        ))
     let fixPackReferences folder =
         let fileMissing filename = File.Exists(filename) |> not
         !! (folder @@ "**/paket.references")
-        |> Seq.map directory
+        |> Seq.map Path.dirnameOf
         |> Seq.iter (fun projectPath ->
-            let projectName = projectPath |> filename
+            let projectName = projectPath |> Path.filenameOf
             !! (projectPath @@ (projectName |> sprintf "%s.*proj"))
             |> Seq.iter (fun projectFile ->
-                let referenceFile = projectPath @@ "obj" @@ (filename projectFile) + ".references"
+                let referenceFile = projectPath @@ "obj" @@ (Path.filenameOf projectFile) + ".references"
                 let nuspecFile = projectPath @@ "obj" @@ projectName + "." + productVersion + ".nuspec"
                 // recreate 'projectName.csproj.refereces' even if it is empty
                 if referenceFile |> fileMissing then
                     referenceFile
-                    |> tap (tracefn "Creating: %s")
-                    |> tap (directory >> CreateDir)
+                    |> tap (Trace.logfn "Creating: %s")
+                    |> tap (Path.dirnameOf >> Directory.create)
                     |> File.touch
                 // delete 'old' .nuspec (they are messing with pack)
-                !! (projectPath @@ "obj" @@ "*.nuspec") -- nuspecFile |> DeleteFiles
+                !! (projectPath @@ "obj" @@ "*.nuspec") -- nuspecFile |> File.deleteAll
             )
         )
     let packMany projects =
-        updateVersion productVersion assemblyVersion "Common.targets"
         let projectFiles = projects |> Seq.map (fun p -> sprintf "src/%s/%s.*proj" p p) |> Seq.collect (!!) |> Seq.toArray
-        let folders = projectFiles |> Seq.map directory |> Seq.distinct |> Seq.toArray
+        let folders = projectFiles |> Seq.map Path.dirnameOf |> Seq.distinct |> Seq.toArray
         folders |> Seq.iter (fun folder ->
             folders |> Seq.iter fixPackReferences
             pack productVersion folder

@@ -1,96 +1,56 @@
+#r "paket:
+    nuget Fake.Core.Target
+    nuget Fake.Core.ReleaseNotes
+    nuget Fake.IO.FileSystem
+    nuget Fake.DotNet.MSBuild
+    nuget Fake.DotNet.Cli
+    nuget Fake.DotNet.Testing.XUnit2
+//"
+
 #load "build.imports.fsx"
+#load "build.tools.fsx"
 
 open Fake.IO
 open Fake.IO.Globbing.Operators
-open Fake.DotNet
-open Fake.DotNet.Testing
 open Fake.Core
 
-// Properties
-let buildDir = "./build/"
-let testDir  = "./test/"
+open Tools
 
-// Targets
-Target.create "Clean" (fun _ ->
-    Shell.cleanDirs [buildDir; testDir]
+let solutions = Proj.settings |> Config.keys "Build"
+let packages = Proj.settings |> Config.keys "Pack"
+
+let clean () = !! "**/bin/" ++ "**/obj/" |> Shell.deleteDirs
+let build () = solutions |> Proj.buildMany
+let restore () = solutions |> Proj.restoreMany
+let test () = Proj.testAll ()
+let release () = packages |> Proj.packMany
+let publish apiKey = packages |> Seq.iter (Proj.publishNugetOrg apiKey)
+
+Target.create "Clean" (fun _ -> clean ())
+
+Target.create "Restore" (fun _ -> restore ())
+
+Target.create "Build" (fun _ -> build ())
+
+Target.create "Rebuild" ignore
+
+Target.create "Test" (fun _ -> test ())
+
+Target.create "Release" (fun _ -> release ())
+
+Target.create "Release:Nuget" (fun _ ->
+    Proj.settings |> Config.valueOrFail "nuget" "accessKey" |> publish
 )
 
-Target.create "BuildApp" (fun _ ->
-   !! "src/app/**/*.csproj"
-     |> MSBuild.runRelease id buildDir "Build"
-     |> Trace.logItems "AppBuild-Output: "
-)
-
-Target.create "BuildTest" (fun _ ->
-    !! "src/test/**/*.csproj"
-      |> MSBuild.runDebug id testDir "Build"
-      |> Trace.logItems "TestBuild-Output: "
-)
-
-Target.create "Test" (fun _ ->
-    !! (testDir + "/NUnit.Test.*.dll")
-      |> NUnit3.run (fun p ->
-          {p with
-                ShadowCopy = false })
-)
-
-Target.create "Default" (fun _ ->
-    Trace.trace "Hello World from FAKE"
-)
-
-// Dependencies
 open Fake.Core.TargetOperators
-"Clean"
-  ==> "BuildApp"
-  ==> "BuildTest"
-  ==> "Test"
-  ==> "Default"
 
-// start build
-Target.runOrDefault "Default"
+"Restore" ==> "Build"
+"Build" ==> "Rebuild"
+"Clean" ?=> "Restore"
+"Clean" ==> "Rebuild"
+"Rebuild" ==> "Release"
+"Test" ==> "Release"
+"Build" ?=> "Test"
+"Release" ==> "Release:Nuget"
 
-
-
-
-
-// #r "paket:
-// nuget Fake.IO.FileSystem
-// nuget Fake.Core.Target"
-
-// #load "./.fake/build.fsx/intellisense.fsx"
-
-// #load "build.tools.fsx"
-
-// let clean () = !! "**/bin/" ++ "**/obj/" |> DeleteDirs
-// let build () = Proj.build "src"
-// let restore () = Proj.restore "src"
-// let test () = Proj.testAll ()
-// let release () = Proj.releaseNupkg ()
-
-// Target "Clean" (fun _ -> clean ())
-
-// Target "Restore" (fun _ -> restore ())
-
-// Target "Build" (fun _ -> build ())
-
-// Target "Rebuild" ignore
-
-// Target "Release" (fun _ -> release ())
-
-// Target "Test" (fun _ -> test ())
-
-// Target "Release:Nuget" (fun _ ->
-//     let apiKey = Proj.settings |> Config.valueOrFail "nuget" "accessKey"
-//     Proj.publishNugetOrg apiKey "K4os.Template"
-// )
-
-// "Restore" ==> "Build"
-// "Build" ==> "Rebuild"
-// "Clean" ?=> "Restore"
-// "Clean" ==> "Rebuild"
-// "Rebuild" ==> "Release"
-// "Test" ==> "Release"
-// "Build" ?=> "Test"
-// "Release" ==> "Release:Nuget"
-
-// RunTargetOrDefault "Build"
+Target.runOrDefault "Build"
