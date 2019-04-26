@@ -12,10 +12,14 @@
 	],
 	"sources": [
 		{
-			"source": "./", 
-			"target": "./",
+			"source": "./content", 
+			"target": "./K4os.Template",
 			"include": ["**/*"],
-			"exclude": [".*/**", "packages/**", "paket-files/**", "**/[Bb]in/**", "**/[Oo]bj/**", "paket.lock"]
+			"exclude": [
+				".*/**", "packages/**", "paket-files/**", 
+                ".secrets.cfg",
+				"**/[Bb]in/**", "**/[Oo]bj/**"
+			]
 		}
 	],
 	"guids": [
