@@ -130,7 +130,7 @@ module Config =
                     let item = { Section = section; Key = key; Value = value }
                     parse lines section (item :: result)
                 | _ ->
-                    Trace.traceErrorfn "Line '%s' does not match config pattern as has been ignored" line
+                    Log.error "Line '%s' does not match config pattern as has been ignored" line
                     parse lines section result
         parse (lines |> List.ofSeq) "" [] |> List.rev |> validate
 
@@ -250,7 +250,7 @@ module Proj =
                 // recreate 'projectName.csproj.refereces' even if it is empty
                 if referenceFile |> fileMissing then
                     referenceFile
-                    |> tap (Trace.logfn "Creating: %s")
+                    |> tap (Log.warn "Creating: %s")
                     |> tap (Path.dirnameOf >> Directory.create)
                     |> File.touch
                 // delete 'old' .nuspec (they are messing with pack)
