@@ -22,7 +22,7 @@ let packages = Proj.settings |> Config.keys "Pack"
 let clean () = !! "**/bin/" ++ "**/obj/" |> Shell.deleteDirs
 let build () = solutions |> Proj.buildMany
 let restore () = solutions |> Proj.restoreMany
-let test () = Proj.testAll ()
+let test () = Proj.xtestAll ()
 let release () = packages |> Proj.packMany
 let publish apiKey = packages |> Seq.iter (Proj.publishNugetOrg apiKey)
 

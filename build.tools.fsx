@@ -33,6 +33,19 @@ module Option =
     let inline cast<'a> (o: obj) = match o with | :? 'a as v -> Some v | _ -> None
     let inline fromRef o = match o with | null -> None | _ -> Some o
 
+module Log =
+    let trace = Trace.logfn
+    let debug = Trace.logfn
+    let info = Trace.tracefn
+    let warn = Trace.traceImportantfn
+    let error = Trace.traceErrorfn
+
+module Path =
+    let corenameOf path = Path.GetFileNameWithoutExtension(path)
+    let filenameOf path = Path.GetFileName(path)
+    let fullnameOf path = Path.GetFullPath(path)
+    let dirnameOf path = Path.GetDirectoryName(path)
+
 module File =
     ServicePointManager.SecurityProtocol <-
         ServicePointManager.SecurityProtocol
@@ -40,17 +53,16 @@ module File =
         ||| SecurityProtocolType.Tls11
         ||| SecurityProtocolType.Tls12
 
+    let copy target source = Shell.copy target source
+    let rename target source = Shell.rename target source
+
     let update modifier inputFile =
         let outputFile = Path.GetTempFileName()
         Shell.cp inputFile outputFile
         modifier outputFile
         if Shell.compareFiles true inputFile outputFile |> not then
-            Trace.logfn "File %s has been modified. Overwriting." inputFile
-            Trace.traceImportantfn "%s -> %s" outputFile inputFile
-            Trace.traceErrorfn "out: %A, in: %A" (File.exists outputFile) (File.exists inputFile)
-            Trace.tracefn "Trace%s?" "fn"
-            Shell.rm inputFile
-            Shell.mv outputFile inputFile
+            Log.warn "File %s has been modified. Overwriting." inputFile
+            outputFile |> Shell.rename (inputFile |> tap File.delete)
 
     let exists filename = File.Exists(filename)
     let loadText filename = File.ReadAllText(filename)
@@ -71,11 +83,6 @@ module File =
             use wc = new WebClient()
             wc.DownloadFile(url, filename)
 
-module Path =
-    let filenameOf path = Path.GetFileName(path)
-    let dirnameOf path = Path.GetDirectoryName(path)
-    let corenameOf path = Path.GetFileNameWithoutExtension(path)
-
 module Regex =
     let create ignoreCase pattern =
         let ignoreCase = if ignoreCase then RegexOptions.IgnoreCase else RegexOptions.None
@@ -89,6 +96,8 @@ module Regex =
 
 module Shell =
     let mono = "Mono.Runtime" |> Type.GetType |> isNull |> not
+    let delete filename = File.delete filename
+    let deleteAll filenames = File.deleteAll filenames
     let runAt directory executable arguments =
         let command = sprintf "%s %s" (String.quote executable) arguments |> tap (Trace.logfn "> %s")
         let comspec, comspecArgs = if mono then "bash", "-c" else Environment.environVarOrFail "COMSPEC", "/c"
@@ -96,7 +105,6 @@ module Shell =
         let proc = Process.Start(info)
         proc.WaitForExit()
         match proc.ExitCode with | 0 -> () | c -> failwithf "Execution failed with error code %d" c
-
     let run executable arguments = runAt "." executable arguments
 
 module Config =
