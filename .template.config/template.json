@@ -18,6 +18,7 @@
 			"exclude": [
 				".*/**", "packages/**", "paket-files/**", 
                 ".secrets.cfg",
+                "src/.idea/**", "src/.vs/**", "src/*.DotSettings.user",
 				"**/[Bb]in/**", "**/[Oo]bj/**"
 			]
 		}
