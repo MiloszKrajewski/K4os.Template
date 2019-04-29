@@ -170,16 +170,17 @@ module Proj =
     let findProj name = !! (sprintf "src/%s/%s.??proj" name name)
 
     let isTestProj projectFile = projectFile |> Path.dirnameOf |> Regex.matches "Test$"
-
-    let updateVersion nugetVersion fileVersion projectFile =
+    
+    let updateVersions projectFile = 
         projectFile |> File.update (fun fn ->
-            Xml.pokeInnerText fn "/Project/PropertyGroup/Version" nugetVersion
-            Xml.pokeInnerText fn "/Project/PropertyGroup/AssemblyVersion" fileVersion
-            Xml.pokeInnerText fn "/Project/PropertyGroup/FileVersion" fileVersion
+            Xml.pokeInnerText fn "/Project/PropertyGroup/Version" productVersion
+            Xml.pokeInnerText fn "/Project/PropertyGroup/AssemblyVersion" assemblyVersion
+            Xml.pokeInnerText fn "/Project/PropertyGroup/FileVersion" assemblyVersion
         )
 
+    let refresh () =
+        updateVersions "Common.targets"
     let restore solution =
-        updateVersion productVersion assemblyVersion "Common.targets"
         solution |> findSln |> Seq.iter (DotNet.restore id)
     let restoreMany solutions =
         solutions |> Seq.iter restore
