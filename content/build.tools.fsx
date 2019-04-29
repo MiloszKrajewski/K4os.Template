@@ -58,7 +58,7 @@ module File =
 
     let update modifier inputFile =
         let outputFile = Path.GetTempFileName()
-        Shell.cp inputFile outputFile
+        inputFile |> Shell.copyFile outputFile
         modifier outputFile
         if Shell.compareFiles true inputFile outputFile |> not then
             Log.warn "File %s has been modified. Overwriting." inputFile
@@ -178,8 +178,6 @@ module Proj =
             Xml.pokeInnerText fn "/Project/PropertyGroup/FileVersion" assemblyVersion
         )
 
-    let refresh () =
-        updateVersions "Common.targets"
     let restore solution =
         solution |> findSln |> Seq.iter (DotNet.restore id)
     let restoreMany solutions =
@@ -206,12 +204,15 @@ module Proj =
     let testAll () =
         listProj () |> Seq.filter isTestProj |> testMany
 
-    let snkGen snk =
+    let regenerateStrongName filename =
         let sn = !! "C:/Program Files (x86)/Microsoft SDKs/Windows/**/bin/**/sn.exe" |> Seq.tryHead
-        match File.exists snk, sn with
+        match File.exists filename, sn with
         | true, _ -> ()
-        | _, Some sn -> snk |> String.quote |> sprintf "-k %s" |> Shell.run sn
+        | _, Some sn -> filename |> String.quote |> sprintf "-k %s" |> Shell.run sn
         | _ -> failwith "SN.exe could not be found"
+        
+    let updateCommonTargets filename =
+        updateVersions filename
 
     let pack version project =
         project |> DotNet.pack (fun p ->

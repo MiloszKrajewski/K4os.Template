@@ -19,7 +19,6 @@ open Tools
 let solutions = Proj.settings |> Config.keys "Build"
 let packages = Proj.settings |> Config.keys "Pack"
 
-let refresh () = Proj.refresh ()
 let clean () = !! "**/bin/" ++ "**/obj/" |> Shell.deleteDirs
 let build () = solutions |> Proj.buildMany
 let restore () = solutions |> Proj.restoreMany
@@ -27,7 +26,10 @@ let test () = Proj.testAll ()
 let release () = packages |> Proj.packMany
 let publish apiKey = packages |> Seq.iter (Proj.publishNugetOrg apiKey)
 
-Target.create "Refresh" (fun _ -> refresh ())
+Target.create "Refresh" (fun _ ->
+    // Proj.regenerateStrongName "K4os.Template.snk"
+    Proj.updateCommonTargets "Common.targets"
+)
 
 Target.create "Clean" (fun _ -> clean ())
 
