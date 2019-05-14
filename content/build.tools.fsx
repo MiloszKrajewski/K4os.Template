@@ -15,6 +15,7 @@ open Fake.IO
 open Fake.IO.Globbing.Operators
 open Fake.IO.FileSystemOperators
 open Fake.DotNet
+open Fake.Api
 
 [<AutoOpen>]
 module Fx =
@@ -53,7 +54,7 @@ module File =
         ||| SecurityProtocolType.Tls11
         ||| SecurityProtocolType.Tls12
 
-    let copy target source = Shell.copy target source
+    let copy target source = Shell.copyFile target source
     let rename target source = Shell.rename target source
 
     let update modifier inputFile =
@@ -87,9 +88,7 @@ module Regex =
         let ignoreCase = if ignoreCase then RegexOptions.IgnoreCase else RegexOptions.None
         Regex(pattern, RegexOptions.ExplicitCapture ||| RegexOptions.IgnorePatternWhitespace ||| ignoreCase)
     let replace pattern (replacement: string) input = Regex.Replace(input, pattern, replacement)
-
     let matches pattern input = Regex.IsMatch(input, pattern)
-
     let (|Match|_|) (pattern: Regex) text =
         match pattern.Match(text) with | m when m.Success -> Some m | _ -> None
 
@@ -153,6 +152,7 @@ module Proj =
         DateTime.Now.Subtract(baseline).TotalSeconds |> int |> sprintf "%8x"
     let productVersion = releaseNotes.NugetVersion |> Regex.replace "-wip$" (timestamp |> sprintf "-wip%s")
     let assemblyVersion = releaseNotes.AssemblyVersion
+    let isPreRelease = releaseNotes.SemVer.PreRelease.IsSome
     let settings =
         ["."]
         |> Seq.collect (fun dn -> ["settings"; ".secrets"] |> Seq.map (fun fn -> dn @@ fn))
@@ -239,6 +239,16 @@ module Proj =
         let nupkg = project + "." + version + ".nupkg"
         let args = sprintf "nuget push -s https://www.nuget.org/api/v2/package %s -k %s" nupkg accessKey
         Shell.runAt outputFolder "dotnet" args
+
+    let publishGitHub repository user token files =
+        let notes = releaseNotes.Notes
+        let prerelease = releaseNotes.SemVer.PreRelease.IsSome
+
+        GitHub.createClientWithToken token
+        |> GitHub.draftNewRelease user repository productVersion prerelease notes
+        |> GitHub.uploadFiles files
+        |> GitHub.publishDraft
+        |> Async.RunSynchronously
 
     let fixPackReferences folder =
         let fileMissing filename = File.Exists(filename) |> not
