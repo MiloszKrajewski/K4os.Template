@@ -16,7 +16,7 @@
 			"target": "./K4os.Template",
 			"include": ["**/*"],
 			"exclude": [
-				".*/**", "packages/**", "paket-files/**", 
+				".*/**", "packages/**", "paket-files/**", "**/*.bak",
                 ".secrets.cfg",
                 "src/.idea/**", "src/.vs/**", "src/*.DotSettings.user",
 				"**/[Bb]in/**", "**/[Oo]bj/**"
