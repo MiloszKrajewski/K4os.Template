@@ -14,6 +14,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".build", ".build", "{835ECD
 		..\CHANGES.md = ..\CHANGES.md
 		..\paket.dependencies = ..\paket.dependencies
 		..\README.md = ..\README.md
+		..\.secrets.cfg = ..\.secrets.cfg
+		..\Common.targets = ..\Common.targets
+		..\LICENSE = ..\LICENSE
+		..\settings.cfg = ..\settings.cfg
+		..\.gitignore = ..\.gitignore
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "K4os.Template.App", "K4os.Template.App\K4os.Template.App.csproj", "{708C4530-0807-467C-8EB0-59129616C273}"
