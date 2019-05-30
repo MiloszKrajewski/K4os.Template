@@ -2,8 +2,8 @@
     nuget Fake.Core.Target
     nuget Fake.Core.ReleaseNotes
     nuget Fake.IO.FileSystem
-	nuget Fake.IO.Zip
-	nuget Fake.Api.GitHub
+    nuget Fake.IO.Zip
+    nuget Fake.Api.GitHub
     nuget Fake.DotNet.MSBuild
     nuget Fake.DotNet.Cli
     nuget Fake.DotNet.Testing.XUnit2
@@ -51,8 +51,6 @@ Target.create "Test" (fun p ->
     else test ()
 )
 
-
-
 Target.create "Release:Nuget" (fun _ ->
     Proj.settings |> Config.valueOrFail "nuget" "accessKey" |> publish
 )
@@ -61,7 +59,6 @@ Target.create "Release:GitHub" (fun _ ->
     let user = Proj.settings |> Config.valueOrFail "github" "user"
     let token = Proj.settings |> Config.valueOrFail "github" "token"
     let repository = Proj.settings |> Config.keys "Repository" |> Seq.exactlyOne
-
     !! (Proj.outputFolder @@ (sprintf "*.%s.nupkg" Proj.productVersion))
     |> Proj.publishGitHub repository user token
 )
@@ -69,8 +66,9 @@ open Fake.Core.TargetOperators
 
 "Refresh" ==> "Restore" ==> "Build" ==> "Rebuild" ==> "Test" ==> "Release"
 "Release" ==> "Release:GitHub" ==> "Release:Nuget"
-"Clean" ?=> "Restore"
 "Clean" ==> "Rebuild"
+
+"Clean" ?=> "Restore"
 "Build" ?=> "Test"
 
 Target.runOrDefaultWithArguments "Build"
