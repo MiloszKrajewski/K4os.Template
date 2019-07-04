@@ -62,6 +62,7 @@ Target.create "Release:GitHub" (fun _ ->
     !! (Proj.outputFolder @@ (sprintf "*.%s.nupkg" Proj.productVersion))
     |> Proj.publishGitHub repository user token
 )
+
 open Fake.Core.TargetOperators
 
 "Refresh" ==> "Restore" ==> "Build" ==> "Rebuild" ==> "Test" ==> "Release"
