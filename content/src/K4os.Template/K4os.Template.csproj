@@ -5,5 +5,6 @@
     <AllowUnsafeCode>true</AllowUnsafeCode>
   </PropertyGroup>
   <Import Project="..\..\Common.targets" />
+  <Import Project="..\..\Signing.targets" />
   <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>

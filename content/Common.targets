@@ -20,4 +20,7 @@
     <PackageIconUrl>https://.../K4os.Template/icon.png</PackageIconUrl>
     -->
   </PropertyGroup>
+  <ItemGroup>
+    <None Remove="*.?sproj.DotSettings" />
+  </ItemGroup>
 </Project>
