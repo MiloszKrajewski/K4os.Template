@@ -5,19 +5,21 @@
     <FileVersion>0.0.1</FileVersion>
   </PropertyGroup>
   <PropertyGroup>
+    <PackageId>$(AssemblyName)</PackageId>
     <Product>K4os.Template</Product>
     <Authors>...</Authors>
     <Copyright>...</Copyright>
     <Description>...</Description>
     <RepositoryUrl>https://.../K4os.Template</RepositoryUrl>
-  </PropertyGroup>
-  <PropertyGroup>
-    <!--
-    <PackageId>K4os.Template</PackageId>
-    <PackageTags>...</PackageTags>
+	<!--
     <PackageLicenseUrl>https://.../LICENSE</PackageLicenseUrl>
     <PackageProjectUrl>https://.../K4os.Template</PackageProjectUrl>
     <PackageIconUrl>https://.../K4os.Template/icon.png</PackageIconUrl>
+	-->
+  </PropertyGroup>
+  <PropertyGroup>
+    <!--
+    <PackageTags>...</PackageTags>
     -->
   </PropertyGroup>
   <ItemGroup>
