@@ -16,10 +16,11 @@
 			"target": "./K4os.Template",
 			"include": ["**/*"],
 			"exclude": [
-				".*/**", "packages/**", "paket-files/**", "**/*.bak",
-                ".secrets.cfg",
+				".fake/**", ".ionide/**", ".paket/**", "paket-files/**", "packages/**", ".nuke/temp/**",
+                ".secrets.cfg", ".signing.snk",
                 "src/.idea/**", "src/.vs/**", "src/*.DotSettings.user",
-				"**/[Bb]in/**", "**/[Oo]bj/**"
+				"**/[Bb]in/**", "**/[Oo]bj/**",
+				"**/*.bak"
 			]
 		}
 	],

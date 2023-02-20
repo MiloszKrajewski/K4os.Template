@@ -1,2 +1,1 @@
-& dotnet new -u .
-& dotnet new -i .
+& dotnet new install . --force

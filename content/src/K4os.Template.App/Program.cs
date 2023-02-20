@@ -35,7 +35,7 @@ namespace K4os.Template.App
 			log.LogError("Error...");
 			log.LogCritical("Critical...");
 
-			Task.Run(() => Console.ReadLine()).Wait(TimeSpan.FromSeconds(5));
+			Task.Run(Console.ReadLine).Wait(TimeSpan.FromSeconds(5));
 		}
 	}
 }

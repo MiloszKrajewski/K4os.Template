@@ -8,8 +8,8 @@ namespace K4os.Template.App
 		public ILogger CreateLogger(string categoryName) => this;
 
 		public void Log<TState>(
-			LogLevel logLevel, EventId eventId, TState state, Exception exception,
-			Func<TState, Exception, string> formatter)
+			LogLevel logLevel, EventId eventId, TState state, Exception? exception,
+			Func<TState, Exception?, string> formatter)
 		{
 			try
 			{
@@ -57,7 +57,7 @@ namespace K4os.Template.App
 
 		public bool IsEnabled(LogLevel logLevel) => true;
 
-		public IDisposable BeginScope<TState>(TState state) => null;
+		public IDisposable? BeginScope<TState>(TState state) where TState: notnull => null;
 
 		public void Dispose() { }
 	}
