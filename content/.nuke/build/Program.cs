@@ -33,6 +33,8 @@ class Program: NukeBuild
 		!IsLocalBuild ? Configuration.Release :
 		Debug ? Configuration.Debug :
 		Configuration.Release;
+	
+	bool IsPacking => ScheduledTargets.Contains(Release);
 
 	[Solution] readonly Solution Solution;
 	
@@ -101,6 +103,7 @@ class Program: NukeBuild
 			DotNetBuild(s => s
 				.SetProjectFile(Solution)
 				.SetConfiguration(Configuration)
+				.SetProperty("IsPacking", IsPacking)
 				.SetVersion(PackageVersion.ToString())
 				.EnableNoRestore());
 		});

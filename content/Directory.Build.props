@@ -24,19 +24,22 @@
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
   </PropertyGroup>
   <PropertyGroup>
+    <RepositoryRoot>$(MSBuildThisFileDirectory)</RepositoryRoot>
+    <RepositoryOwner>MiloszKrajewski</RepositoryOwner>
+  </PropertyGroup>
+  <PropertyGroup>
     <Product>K4os.Template</Product>
     <Description>...</Description>
     <PackageTags>... ... ...</PackageTags>
     <Authors>Milosz Krajewski</Authors>
     <Copyright>Milosz Krajewski</Copyright>
-    <PackageId>$(AssemblyName)</PackageId>
-    <PackageLicenseUrl>https://raw.githubusercontent.com/MiloszKrajewski/K4os.Template/master/LICENSE</PackageLicenseUrl>
-    <PackageProjectUrl>https://github.com/MiloszKrajewski/K4os.Template</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/MiloszKrajewski/K4os.Template</RepositoryUrl>
-    <PackageIconUrl>https://github.com/MiloszKrajewski/K4os.Template/blob/master/doc/icon.png?raw=true</PackageIconUrl>
   </PropertyGroup>
   <PropertyGroup>
-    <RepositoryRoot>$(MSBuildThisFileDirectory)</RepositoryRoot>
+    <PackageId>$(AssemblyName)</PackageId>
+    <PackageLicenseUrl>https://raw.githubusercontent.com/$(RepositoryOwner)/$(Product)/master/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/$(RepositoryOwner)/$(Product)</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/$(RepositoryOwner)/$(Product)</RepositoryUrl>
+    <PackageIconUrl Condition=" Exists('$(RepositoryRoot)/icon.png') ">https://github.com/$(RepositoryOwner)/$(Product)/blob/master/icon.png?raw=true</PackageIconUrl>
   </PropertyGroup>
   <!--
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>

@@ -1,10 +1,18 @@
 <Project>
+  <!-- 
+  SignAssembly and InternalsVisibleTo are not playing nice together, 
+  you need to make a call which one you want to use.
+  -->
+  <!--
   <PropertyGroup Condition=" '$(SignAssembly)' == 'true' ">
     <AssemblyOriginatorKeyFile>$(RepositoryRoot)/.signing.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
+  -->
+  <ItemGroup Condition=" '$(IsPackable)' == 'true' ">
+    <InternalsVisibleTo Include="$(AssemblyName).Test" />
+  </ItemGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' and '$(IsPackable)' == 'true' ">
-    <Optimize>true</Optimize>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <TreatWarningsAsErrors Condition=" '$(IsPacking)' == 'true' ">true</TreatWarningsAsErrors>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
   <ItemGroup>

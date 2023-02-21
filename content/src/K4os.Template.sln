@@ -3,10 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27130.2024
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "K4os.Template", "K4os.Template\K4os.Template.csproj", "{9CC4C587-A811-4A30-9C80-6E1049B94E2F}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "K4os.Template.Test", "K4os.Template.Test\K4os.Template.Test.csproj", "{956BAD8B-61D4-4DAF-A8FE-9E08AB7E2603}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".environment", ".environment", "{835ECDA0-7229-4D96-8B74-8D9F119E6683}"
 	ProjectSection(SolutionItems) = preProject
 		..\.secrets.cfg = ..\.secrets.cfg
@@ -21,8 +17,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".environment", ".environmen
 		..\paket.dependencies = ..\paket.dependencies
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "K4os.Template.App", "K4os.Template.App\K4os.Template.App.csproj", "{708C4530-0807-467C-8EB0-59129616C273}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".resources", ".resources", "{EF37FE4A-3F48-4DC3-AD44-B12C53A1F1CF}"
 	ProjectSection(SolutionItems) = preProject
 		..\CHANGES.md = ..\CHANGES.md
@@ -31,6 +25,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".resources", ".resources", 
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "_build", "..\.nuke\build\_build.csproj", "{96032870-E409-41A8-AA93-5D6082217F30}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "K4os.Template", "K4os.Template\K4os.Template.csproj", "{9CC4C587-A811-4A30-9C80-6E1049B94E2F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "K4os.Template.Test", "K4os.Template.Test\K4os.Template.Test.csproj", "{956BAD8B-61D4-4DAF-A8FE-9E08AB7E2603}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "K4os.Template.App", "K4os.Template.App\K4os.Template.App.csproj", "{708C4530-0807-467C-8EB0-59129616C273}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
