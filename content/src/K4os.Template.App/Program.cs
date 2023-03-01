@@ -1,6 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 // ReSharper disable UnusedParameter.Local
@@ -24,7 +22,9 @@ namespace K4os.Template.App
 		private static void Configure(ServiceCollection serviceCollection) { }
 
 		private static void Execute(
-			ILoggerFactory loggerFactory, IServiceProvider serviceProvider, string[] args)
+			ILoggerFactory loggerFactory, 
+			IServiceProvider serviceProvider, 
+			string[] args)
 		{
 			var log = loggerFactory.CreateLogger("main");
 

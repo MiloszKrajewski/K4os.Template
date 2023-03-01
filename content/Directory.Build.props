@@ -16,16 +16,14 @@
   <PropertyGroup>
     <LangVersion>latest</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <PropertyGroup>
     <Optimize Condition=" '$(Configuration)' == 'Release' ">true</Optimize>
     <IsPackable>false</IsPackable>
-    <Nullable>enable</Nullable>
     <CheckEolTargetFramework>false</CheckEolTargetFramework>
     <NoWarn>$(NoWarn);NU5125;NU5048</NoWarn>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-  </PropertyGroup>
-  <PropertyGroup>
-    <RepositoryRoot>$(MSBuildThisFileDirectory)</RepositoryRoot>
-    <RepositoryOwner>MiloszKrajewski</RepositoryOwner>
   </PropertyGroup>
   <PropertyGroup>
     <Product>K4os.Template</Product>
@@ -35,12 +33,24 @@
     <Copyright>Milosz Krajewski</Copyright>
   </PropertyGroup>
   <PropertyGroup>
-    <PackageId>$(AssemblyName)</PackageId>
-    <PackageLicenseUrl>https://raw.githubusercontent.com/$(RepositoryOwner)/$(Product)/master/LICENSE</PackageLicenseUrl>
-    <PackageProjectUrl>https://github.com/$(RepositoryOwner)/$(Product)</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/$(RepositoryOwner)/$(Product)</RepositoryUrl>
-    <PackageIconUrl Condition=" Exists('$(RepositoryRoot)/icon.png') ">https://github.com/$(RepositoryOwner)/$(Product)/blob/master/icon.png?raw=true</PackageIconUrl>
+    <RepositoryRoot>$(MSBuildThisFileDirectory)</RepositoryRoot>
+    <RepositoryOwner>MiloszKrajewski</RepositoryOwner>
   </PropertyGroup>
+  <PropertyGroup>
+    <PackageId>$(AssemblyName)</PackageId>
+    <RepositoryUrl>https://github.com/$(RepositoryOwner)/$(Product)</RepositoryUrl>
+    <PackageProjectUrl>$(RepositoryUrl)</PackageProjectUrl>
+    <PackageLicenseUrl>$(RepositoryUrl)/blob/master/LICENSE?raw=true</PackageLicenseUrl>
+    <PackageIconUrl Condition=" Exists('$(RepositoryRoot)/icon.png') ">$(RepositoryUrl)/blob/master/icon.png?raw=true</PackageIconUrl>
+  </PropertyGroup>
+  <ItemGroup>
+    <Using Include="System" />
+    <Using Include="System.Linq" />
+    <Using Include="System.IO" />
+    <Using Include="System.Collections.Generic" />
+    <Using Include="System.Threading" />
+    <Using Include="System.Threading.Tasks" />
+  </ItemGroup>
   <!--
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
