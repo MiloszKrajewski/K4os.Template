@@ -3,6 +3,9 @@
   $(MSBuildThisFileDirectory) - is a variable that points to the directory of the current project file.
   <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />  
   -->
+  <PropertyGroup>
+    <PublicAssemblyProps>$(MSBuildThisFileDirectory)\PublicAssembly.props</PublicAssemblyProps>
+  </PropertyGroup>
   <PropertyGroup Condition=" 'true' == 'false' ">
     <!--
     This repository is not using Central Package Version Management, because it is still not good.
