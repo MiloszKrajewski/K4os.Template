@@ -34,7 +34,10 @@ class Program: NukeBuild
 		Debug ? Configuration.Debug :
 		Configuration.Release;
 	
-	bool IsPacking => ScheduledTargets.Contains(Release);
+	bool IsReleasing => 
+		ScheduledTargets.Contains(Release) ||
+		RunningTargets.Contains(Release) ||
+		FinishedTargets.Contains(Release);
 
 	[Solution] readonly Solution Solution;
 	
@@ -103,7 +106,7 @@ class Program: NukeBuild
 			DotNetBuild(s => s
 				.SetProjectFile(Solution)
 				.SetConfiguration(Configuration)
-				.SetProperty("IsPacking", IsPacking)
+				.SetProperty("IsReleasing", IsReleasing)
 				.SetVersion(PackageVersion.ToString())
 				.EnableNoRestore());
 		});

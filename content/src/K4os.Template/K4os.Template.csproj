@@ -5,4 +5,5 @@
     <IsPackable>true</IsPackable>
     <SignAssembly>true</SignAssembly>
   </PropertyGroup>
+  <Import Project="../../PublicAssembly.props" />
 </Project>

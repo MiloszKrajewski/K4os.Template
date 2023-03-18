@@ -15,6 +15,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".environment", ".environmen
 		..\global.json = ..\global.json
 		..\nuget.config = ..\nuget.config
 		..\paket.dependencies = ..\paket.dependencies
+		..\PublicAssembly.props = ..\PublicAssembly.props
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".resources", ".resources", "{EF37FE4A-3F48-4DC3-AD44-B12C53A1F1CF}"
@@ -28,7 +29,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "_build", "..\.nuke\build\_b
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "K4os.Template", "K4os.Template\K4os.Template.csproj", "{9CC4C587-A811-4A30-9C80-6E1049B94E2F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "K4os.Template.Test", "K4os.Template.Test\K4os.Template.Test.csproj", "{956BAD8B-61D4-4DAF-A8FE-9E08AB7E2603}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "K4os.Template.Tests", "K4os.Template.Tests\K4os.Template.Tests.csproj", "{956BAD8B-61D4-4DAF-A8FE-9E08AB7E2603}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "K4os.Template.App", "K4os.Template.App\K4os.Template.App.csproj", "{708C4530-0807-467C-8EB0-59129616C273}"
 EndProject
