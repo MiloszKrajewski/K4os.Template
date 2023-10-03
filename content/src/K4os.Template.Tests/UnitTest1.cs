@@ -1,6 +1,6 @@
 using Xunit;
 
-namespace K4os.Template.Test;
+namespace K4os.Template.Tests;
 
 public class UnitTest1
 {
@@ -15,6 +15,6 @@ public class UnitTest1
 	[Fact]
 	public void InternalMethodsAreVisibleToTests()
 	{
-		Assert.Equal("true", _sut.BoolToString(true));
+		Assert.True(string.Equals("True", _sut.BoolToString(true)));
 	}
 }

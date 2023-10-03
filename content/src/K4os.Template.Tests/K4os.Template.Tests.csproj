@@ -2,7 +2,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
-    <RootNamespace>K4os.Template.Test</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\K4os.Template\K4os.Template.csproj" />

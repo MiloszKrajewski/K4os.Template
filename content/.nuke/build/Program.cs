@@ -22,7 +22,8 @@ using static Nuke.Common.Tools.DotNet.DotNetTasks;
 	"continuous",
 	GitHubActionsImage.WindowsLatest,
 	On = new[] { GitHubActionsTrigger.Push },
-	InvokedTargets = new[] { nameof(Release) })]
+	InvokedTargets = new[] { nameof(Release) },
+	CacheKeyFiles = new[] { ".paket.lock", "Directory.Packages.props", "**/*.csproj" })]
 class Program: NukeBuild
 {
 	public static int Main() => Execute<Program>(x => x.Build);
@@ -163,8 +164,12 @@ class Program: NukeBuild
 		.After(Build)
 		.Executes(() =>
 		{
-			DotNetTest(s => s
-				.SetProjectFile(Solution)
-				.SetConfiguration(Configuration));
+			Solution
+				.AllProjects
+				.Where(p => p.Name.EndsWith(".Tests"))
+				.ForEach(p => 
+					DotNetTest(s => s
+						.SetProjectFile(p)
+						.SetConfiguration(Configuration)));
 		});
 }
