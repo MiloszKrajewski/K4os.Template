@@ -1,40 +1,52 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿// ReSharper disable UnusedParameter.Local
+
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Serilog;
 
-// ReSharper disable UnusedParameter.Local
+var app = Host
+	.CreateDefaultBuilder(args)
+	.UseSerilog(
+		(context, configuration) => {
+			var serilogTemplate =
+				"[{Timestamp:HH:mm:ss.fff} {Level:u3}] ({SourceContext}) {Message:lj}{NewLine}{Exception}";
+			configuration
+				.ReadFrom.Configuration(context.Configuration)
+				.Enrich.FromLogContext()
+				.WriteTo.Console(outputTemplate: serilogTemplate);
+		})
+	.Build();
 
-namespace K4os.Template.App;
+await app.StartAsync();
 
-internal static class Program
+await Execute(
+	app.Services,
+	app.Services.GetRequiredService<ILoggerFactory>(),
+	app.Services.GetRequiredService<IConfiguration>());
+
+await app.StopAsync();
+return;
+
+//--------------------------------------------------------------------------------------------------
+
+static async Task Execute(
+	IServiceProvider serviceProvider,
+	ILoggerFactory loggerFactory,
+	IConfiguration configuration)
 {
-	public static void Main(string[] args)
-	{
-		var loggerFactory = new LoggerFactory();
-		loggerFactory.AddProvider(new ColorConsoleProvider());
-		var serviceCollection = new ServiceCollection();
-		serviceCollection.AddSingleton<ILoggerFactory>(loggerFactory);
+	await Task.CompletedTask;
+	var log = loggerFactory.CreateLogger("root");
 
-		Configure(serviceCollection);
-		var serviceProvider = serviceCollection.BuildServiceProvider();
-		Execute(loggerFactory, serviceProvider, args);
-	}
+	log.LogTrace("Trace...");
+	log.LogDebug("Debug...");
+	log.LogInformation("Info...");
+	log.LogWarning("Warning...");
+	log.LogError("Error...");
+	log.LogCritical("Critical...");
 
-	private static void Configure(ServiceCollection serviceCollection) { }
-
-	private static void Execute(
-		ILoggerFactory loggerFactory, 
-		IServiceProvider serviceProvider, 
-		string[] args)
-	{
-		var log = loggerFactory.CreateLogger("main");
-
-		log.LogTrace("Trace...");
-		log.LogDebug("Debug...");
-		log.LogInformation("Info...");
-		log.LogWarning("Warning...");
-		log.LogError("Error...");
-		log.LogCritical("Critical...");
-
-		Task.Run(Console.ReadLine).Wait(TimeSpan.FromSeconds(5));
-	}
+	await Task.WhenAny(
+		Task.Run(() => Console.In.ReadLineAsync()),
+		Task.Delay(TimeSpan.FromSeconds(5)));
 }
