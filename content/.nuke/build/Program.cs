@@ -130,9 +130,17 @@ class Program: NukeBuild
 				.EnableNoBuild());
 		});
 
+	Target VerifyArtifacts => _ => _
+		.After(Release)
+		.Executes(() =>
+		{
+			if (!ArtifactsPattern.GlobFiles().Any())
+				throw new FileNotFoundException($"No artifacts found for {ArtifactsPattern}");
+		});
+
 	Target PublishToNuget => _ => _
 		.After(Release).After(PublishToGitHub)
-		.Requires(() => ArtifactsPattern.GlobFiles().Any())
+		.DependsOn(VerifyArtifacts)
 		.Executes(() =>
 		{
 			var token = GetNugetApiKey();
@@ -145,8 +153,7 @@ class Program: NukeBuild
 
 	Target PublishToGitHub => _ => _
 		.After(Release)
-		.Requires(() => GitRepository.IsGitHubRepository())
-		.Requires(() => ArtifactsPattern.GlobFiles().Any())
+		.DependsOn(VerifyArtifacts)
 		.Executes(async () =>
 		{
 			var token = GetGitHubApiKey();
