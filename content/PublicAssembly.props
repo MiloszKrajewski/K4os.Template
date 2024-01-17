@@ -6,6 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- NOTE: this might not be needed in .NET 8+ -->
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
   </ItemGroup>
 

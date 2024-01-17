@@ -9,7 +9,6 @@ using Nuke.Common.Git;
 using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
 using Nuke.Common.Tools.DotNet;
-using Nuke.Common.Tools.GitHub;
 using Nuke.Common.Tools.GitVersion;
 using Nuke.Common.Utilities.Collections;
 using Serilog;
@@ -127,7 +126,10 @@ class Program: NukeBuild
 				.SetVersion(PackageVersion.ToString())
 				.SetOutputDirectory(OutputDirectory)
 				.EnableNoRestore()
-				.EnableNoBuild());
+				.EnableNoBuild()
+				.EnableIncludeSymbols()
+				.SetSymbolPackageFormat(DotNetSymbolPackageFormat.snupkg)
+			);
 		});
 
 	Target VerifyArtifacts => _ => _
@@ -148,6 +150,7 @@ class Program: NukeBuild
 			DotNetNuGetPush(s => s
 				.SetTargetPath(ArtifactsPattern)
 				.SetSource("https://api.nuget.org/v3/index.json")
+				.EnableSkipDuplicate()
 				.SetApiKey(token));
 		});
 
@@ -158,8 +161,8 @@ class Program: NukeBuild
 		{
 			var token = GetGitHubApiKey();
 			var artifacts = ArtifactsPattern.GlobFiles().ToArray();
-			await GitHubReleaser.Release(
-				token,
+			var api = new GitHubApi(token);
+			await api.Release(
 				PackageVersion,
 				GitRepository,
 				GitVersion,
@@ -172,8 +175,7 @@ class Program: NukeBuild
 		.Executes(() =>
 		{
 			Solution
-				.AllProjects
-				.Where(p => p.Name.EndsWith(".Tests"))
+				.GetProjects("*.Tests")
 				.ForEach(p => 
 					DotNetTest(s => s
 						.SetProjectFile(p)
