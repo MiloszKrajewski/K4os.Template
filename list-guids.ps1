@@ -7,12 +7,19 @@ $knownGuids = @(
     "9A19103F-16F7-4668-BE54-9A1E7A4F7556"
 ) | ForEach-Object { AsGuid $_ }
 
+$skippedGuids = `
+    Get-Content -Path ".template.config/template.json" | `
+    ConvertFrom-Json | `
+    Select-Object -ExpandProperty "guids" | `
+    ForEach-Object { AsGuid $_ }
+
 function Find-GuidsInFileAndUpdateHashtable {
     param (
         [string]$filePath
     )
     
     $content = Get-Content -Path $filePath -Raw
+    if ($null -eq $content) { return }
     $guids = [regex]::Matches($content, '(?i)\b[A-F0-9]{8}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{12}\b')
     if ($guids -eq $null -or $guids.Count -eq 0) { return }
 
@@ -38,8 +45,15 @@ try {
         Find-GuidsInFileAndUpdateHashtable -filePath $textFile.FullName
     }
 
+    foreach ($guid in $skippedGuids) {
+        if (-not $guidFileGroups.ContainsKey($guid)) {
+            Write-Host "`n>>> $guid" -ForegroundColor Yellow
+            Write-Host "  * excluded, but never used"
+        }
+    }
+
     foreach ($guid in $guidFileGroups.Keys | Sort-Object) {
-        if ($guid -in $knownGuids) {
+        if ($guid -in $knownGuids -or $guid -in $skippedGuids) {
             continue
         }
         $filePaths = $guidFileGroups[$guid] | Sort-Object
