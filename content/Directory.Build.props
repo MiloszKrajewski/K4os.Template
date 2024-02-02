@@ -3,6 +3,7 @@
   $(MSBuildThisFileDirectory) - is a variable that points to the directory of the current project file.
   <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />  
   -->
+  
   <PropertyGroup>
     <PublicAssemblyProps>$(MSBuildThisFileDirectory)\PublicAssembly.props</PublicAssemblyProps>
   </PropertyGroup>
@@ -21,14 +22,18 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Nullable>enable</Nullable>
   </PropertyGroup>
+  
   <PropertyGroup>
     <IsPackable>false</IsPackable>
+    <OutputType>Library</OutputType>
     <CheckEolTargetFramework>false</CheckEolTargetFramework>
     <NoWarn>$(NoWarn);NU5125;NU5048</NoWarn>
   </PropertyGroup>
+  
   <ItemGroup Condition=" '$(IsPackable)' == 'true' ">
     <InternalsVisibleTo Include="$(AssemblyName).Tests" />
   </ItemGroup>
+  
   <ItemGroup>
     <Using Include="System" />
     <Using Include="System.Linq" />
@@ -37,6 +42,7 @@
     <Using Include="System.Threading" />
     <Using Include="System.Threading.Tasks" />
   </ItemGroup>
+  
   <!--
   <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
   <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>

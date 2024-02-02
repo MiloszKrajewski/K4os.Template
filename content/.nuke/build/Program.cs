@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using NuGet.Versioning;
@@ -8,21 +9,24 @@ using Nuke.Common.CI.GitHubActions;
 using Nuke.Common.Git;
 using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
+using Nuke.Common.Tooling;
+using Nuke.Common.Tools.Docker;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.GitVersion;
 using Nuke.Common.Utilities.Collections;
 using Serilog;
 using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
+using static Nuke.Common.Tools.Docker.DockerTasks;
 
 // ReSharper disable UnusedMember.Local
 
 [GitHubActions(
 	"continuous",
 	GitHubActionsImage.WindowsLatest,
-	On = new[] { GitHubActionsTrigger.Push },
-	InvokedTargets = new[] { nameof(Release) },
-	CacheKeyFiles = new[] { ".paket.lock", "Directory.Packages.props", "**/*.csproj" })]
+	On = [GitHubActionsTrigger.Push],
+	InvokedTargets = [nameof(Release)],
+	CacheKeyFiles = [".paket.lock", "Directory.Packages.props", "**/*.csproj"])]
 class Program: NukeBuild
 {
 	public static int Main() => Execute<Program>(x => x.Build);
@@ -46,8 +50,9 @@ class Program: NukeBuild
 	
 	static readonly AbsolutePath NukeDirectory = RootDirectory / ".nuke";
 	static readonly AbsolutePath OutputDirectory = RootDirectory / ".output";
+	static readonly AbsolutePath DockerDirectory = RootDirectory / "docker";
 
-	AbsolutePath ArtifactsPattern => OutputDirectory / $"*.{PackageVersion}.nupkg";
+	AbsolutePath PackageArtifactsPattern => OutputDirectory / $"*.{PackageVersion}.nupkg";
 
 	readonly ReleaseNotes[] ReleaseNotes = ChangelogTasks
 		.ReadReleaseNotes(RootDirectory / "CHANGES.md")
@@ -56,6 +61,23 @@ class Program: NukeBuild
 	NuGetVersion PackageVersion =>
 		ReleaseNotes.FirstOrDefault()?.Version ??
 		throw new ArgumentException("No release notes found");
+
+	static bool IsNugetPackage(Project project) =>
+		project.GetProperty<bool>("IsPackable");
+
+	static bool IsApplication(Project project) =>
+		project.GetOutputType() == "Exe" &&
+		!IsTest(project);
+
+	static bool IsTest(Project project) =>
+		project.Name.EndsWith(".Tests") ||
+		project.HasPackageReference("Microsoft.NET.Test.Sdk");
+
+	IEnumerable<Project> Projects(Func<Project, bool> predicate = null) =>
+		from p in Solution.AllProjects
+		where !NukeDirectory.Contains(p)
+		where predicate is null || predicate(p)
+		select p;
 
     static void RestoreSecretFile(string secretFile, string exampleFile)
 	{
@@ -83,8 +105,8 @@ class Program: NukeBuild
 			RootDirectory
 				.GlobDirectories("**/bin", "**/obj", "packages")
 				.Where(p => !NukeDirectory.Contains(p))
-				.ForEach(DeleteDirectory);
-			EnsureCleanDirectory(OutputDirectory);
+				.ForEach(f => f.DeleteDirectory());
+			OutputDirectory.CreateOrCleanDirectory();
 		});
 
 	Target Restore => _ => _
@@ -120,24 +142,63 @@ class Program: NukeBuild
 		.Produces(OutputDirectory / "*.nupkg")
 		.Executes(() =>
 		{
+			foreach (var p in Projects(IsNugetPackage))
+			{
 			DotNetPack(s => s
-				.SetProject(Solution)
+				.SetProject(p)
 				.SetConfiguration(Configuration)
 				.SetVersion(PackageVersion.ToString())
 				.SetOutputDirectory(OutputDirectory)
 				.EnableNoRestore()
 				.EnableNoBuild()
-				.EnableIncludeSymbols()
-				.SetSymbolPackageFormat(DotNetSymbolPackageFormat.snupkg)
 			);
+			}
+
+			foreach (var a in Projects(IsApplication))
+			{
+				DotNetPublish(s => s
+					.SetProject(a.Path)
+					.SetConfiguration(Configuration.Release)
+					.SetOutput(OutputDirectory / a.Name)
+				);
+				var zipName = $"{a.Name}-{PackageVersion}.zip";
+				Log.Information("Compressing {Application}...", zipName);
+				(OutputDirectory / a.Name).CompressTo(OutputDirectory / zipName);
+			}
+		});
+	
+	Target ReleaseDocker => _ => _
+		.DependsOn(Release)
+		.Executes(() =>
+		{
+			var dockerTools = new DockerTools(DockerDirectory);
+			
+			foreach (var a in Projects(IsApplication))
+			{
+				var dockerFile = dockerTools.FindDockerFile(a);
+				if (dockerFile is null) continue;
+
+				var imageName = dockerTools.GetDockerImageName(a);
+				var artifactsPath = RootDirectory.GetUnixRelativePathTo(OutputDirectory / a.Name);
+				DockerBuild(s => s
+					.SetProcessWorkingDirectory(RootDirectory)
+					.SetPath(RootDirectory)
+					.SetFile(dockerFile)
+					.AddBuildArg($"PROJECT_NAME={a.Name}")
+					.AddBuildArg($"PROJECT_PATH={artifactsPath}")
+					.AddTag($"{imageName}:{PackageVersion}")
+					.AddTag($"{imageName}:latest")
+					.EnableQuiet()
+				);
+			}
 		});
 
 	Target VerifyArtifacts => _ => _
 		.After(Release)
 		.Executes(() =>
 		{
-			if (!ArtifactsPattern.GlobFiles().Any())
-				throw new FileNotFoundException($"No artifacts found for {ArtifactsPattern}");
+			if (!PackageArtifactsPattern.GlobFiles().Any())
+				throw new FileNotFoundException($"No artifacts found for {PackageArtifactsPattern}");
 		});
 
 	Target PublishToNuget => _ => _
@@ -148,7 +209,7 @@ class Program: NukeBuild
 			var token = GetNugetApiKey();
 
 			DotNetNuGetPush(s => s
-				.SetTargetPath(ArtifactsPattern)
+				.SetTargetPath(PackageArtifactsPattern)
 				.SetSource("https://api.nuget.org/v3/index.json")
 				.EnableSkipDuplicate()
 				.SetApiKey(token));
@@ -160,7 +221,7 @@ class Program: NukeBuild
 		.Executes(async () =>
 		{
 			var token = GetGitHubApiKey();
-			var artifacts = ArtifactsPattern.GlobFiles().ToArray();
+			var artifacts = PackageArtifactsPattern.GlobFiles().ToArray();
 			var api = new GitHubApi(token);
 			await api.Release(
 				PackageVersion,
@@ -174,11 +235,12 @@ class Program: NukeBuild
 		.After(Build)
 		.Executes(() =>
 		{
-			Solution
-				.GetProjects("*.Tests")
-				.ForEach(p => 
-					DotNetTest(s => s
-						.SetProjectFile(p)
-						.SetConfiguration(Configuration)));
+			foreach (var p in Projects(IsTest))
+			{
+				DotNetTest(s => s
+					.SetProjectFile(p)
+					.SetConfiguration(Configuration)
+				);
+			}
 		});
 }

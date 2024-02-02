@@ -16,6 +16,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".environment", ".environmen
 		..\nuget.config = ..\nuget.config
 		..\paket.dependencies = ..\paket.dependencies
 		..\PublicAssembly.props = ..\PublicAssembly.props
+		..\paket.lock = ..\paket.lock
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".resources", ".resources", "{EF37FE4A-3F48-4DC3-AD44-B12C53A1F1CF}"
@@ -23,6 +24,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".resources", ".resources", 
 		..\CHANGES.md = ..\CHANGES.md
 		..\LICENSE = ..\LICENSE
 		..\README.md = ..\README.md
+		..\docker\docker-compose.yaml = ..\docker\docker-compose.yaml
+		..\docker\default.dockerfile = ..\docker\default.dockerfile
+		..\docker\envoy.yaml = ..\docker\envoy.yaml
+		..\docker\.env = ..\docker\.env
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "_build", "..\.nuke\build\_build.csproj", "{96032870-E409-41A8-AA93-5D6082217F30}"
