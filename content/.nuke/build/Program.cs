@@ -15,7 +15,6 @@ using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.GitVersion;
 using Nuke.Common.Utilities.Collections;
 using Serilog;
-using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using static Nuke.Common.Tools.Docker.DockerTasks;
 
@@ -87,7 +86,7 @@ class Program: NukeBuild
 		Log.Warning(
 			"Secret file '{SecretFile}' not found, copying example file '{ExampleFile}' instead",
 			secretFile, exampleFile);
-		CopyFile(RootDirectory / exampleFile, RootDirectory / secretFile);
+		(RootDirectory / exampleFile).Copy(RootDirectory / secretFile);
 	}
     
     static string GetNugetApiKey() =>
