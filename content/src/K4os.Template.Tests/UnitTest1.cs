@@ -15,6 +15,6 @@ public class UnitTest1
 	[Fact]
 	public void InternalMethodsAreVisibleToTests()
 	{
-		Assert.True(string.Equals("True", _sut.BoolToString(true)));
+		Assert.Equal("True", _sut.BoolToString(true));
 	}
 }
