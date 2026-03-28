@@ -57,6 +57,9 @@ class Program: NukeBuild
 		.ReadReleaseNotes(RootDirectory / "CHANGES.md")
 		.ToArray();
 
+	readonly bool HasPaketDependencies = 
+		(RootDirectory / "paket.dependencies").FileExists();
+
 	NuGetVersion PackageVersion =>
 		ReleaseNotes.FirstOrDefault()?.Version ??
 		throw new ArgumentException("No release notes found");
@@ -116,7 +119,7 @@ class Program: NukeBuild
             RestoreSecretFile(".signing.snk", "res/.signing.example.snk");
 
 			DotNetToolRestore();
-			DotNet("paket restore");
+			if (HasPaketDependencies) DotNet("paket restore");
 			DotNetRestore(s => s.SetProjectFile(Solution));
 		});
 
