@@ -18,9 +18,13 @@
     <PackageId>$(AssemblyName)</PackageId>
     <RepositoryUrl>https://github.com/$(RepositoryOwner)/$(RepositoryName)</RepositoryUrl>
     <PackageProjectUrl>$(RepositoryUrl)</PackageProjectUrl>
-    <PackageLicenseUrl>$(RepositoryUrl)/blob/master/LICENSE?raw=true</PackageLicenseUrl>
-    <PackageIconUrl Condition=" Exists('$(RepositoryRoot)/icon.png') ">$(RepositoryUrl)/blob/master/icon.png?raw=true</PackageIconUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageIcon Condition=" Exists('$(RepositoryRoot)/icon.png') ">icon.png</PackageIcon>
   </PropertyGroup>
+
+  <ItemGroup Condition=" Exists('$(RepositoryRoot)/icon.png') ">
+    <None Include="$(RepositoryRoot)/icon.png" Pack="true" PackagePath=""/>
+  </ItemGroup>
 
   <PropertyGroup Condition=" $(Configuration) == 'Release' ">
     <!--
